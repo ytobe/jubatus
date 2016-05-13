@@ -546,7 +546,6 @@ void linear_mixer::mix() {
 
 byte_buffer linear_mixer::get_diff(int a) {
   scoped_rlock lk_read(model_mutex_);
-  scoped_lock lk(m_);
 
   core::framework::linear_mixable* mixable =
     dynamic_cast<core::framework::linear_mixable*>(driver_->get_mixable());
