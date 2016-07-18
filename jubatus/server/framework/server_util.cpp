@@ -197,6 +197,8 @@ server_argv::server_argv(int args, char** argv, const std::string& type)
 
   p.add("version", 'v', "version");
 
+  p.add("validate-config" , 'V' , "only validate config");
+
 #ifndef HAVE_ZOOKEEPER_H
   p.footer("\nAll " + IGNORED_TAG +
            " options are for compatibility with distributed mode");
@@ -221,6 +223,7 @@ server_argv::server_argv(int args, char** argv, const std::string& type)
   configpath = p.get<std::string>("configpath");
   modelpath = p.get<std::string>("model_file");
   daemon = p.exist("daemon");
+  validateConfig = p.exist("validate-config");
 
   // determine listen-address and IPaddr used as ZK 'node-name'
   // TODO(y-oda-oni-juba): check bind_address is valid format
