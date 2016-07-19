@@ -28,7 +28,6 @@
 #include "jubatus/util/system/time_util.h"
 
 #include "jubatus/core/common/jsonconfig.hpp"
-#include "jubatus/core/fv_converter/exception.hpp"
 #include "mixer/mixer.hpp"
 #include "server_util.hpp"
 #include "../../config.hpp"
@@ -98,15 +97,8 @@ class server_helper {
         config_error << core::common::exception::error_message((*it)->what());
       }
       // send error message to caller
-      if (a.validateConfig) {
-        std::cout << "Invalid Config:" << std::endl;
-        std::cout << config_error.what() << std::endl;
-        exit(1);
-      }else {
-        throw JUBATUS_EXCEPTION(config_error);
-      }
+      throw JUBATUS_EXCEPTION(config_error);
     } catch (const jubatus::util::lang::parse_error& e) {
-      std::cout << "Invalid Config:" << std::endl;
       // exit immediately on JSON parse error with exit-code 1
       std::string msg =
           std::string("syntax error in configuration: ") +
@@ -119,25 +111,8 @@ class server_helper {
 
       LOG(ERROR) << msg;
       exit(1);
-    } catch (const jubatus::core::fv_converter::converter_exception& e) {
-      std::cout << "Invalid Config:" << std::endl;
-      // send error message to caller
-      if (a.validateConfig) {
-        std::cout << e.what() << std::endl;
-        exit(1);
-      }else {
-        throw JUBATUS_EXCEPTION(e);
-      }
     } catch (const std::runtime_error& e) {
       throw;
-    } catch (const std::exception& e) {
-      throw;
-    }
-
-    //If Valid Config
-    if (a.validateConfig) {
-      std::cout << "Valid Config." << std::endl;
-      exit(0);
     }
   }
 

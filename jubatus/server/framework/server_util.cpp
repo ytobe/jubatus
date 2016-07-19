@@ -22,6 +22,9 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <jubatus/core/common/jsonconfig/config.hpp>
+#include <jubatus/core/common/jsonconfig.hpp>
+#include <jubatus/core/fv_converter/converter_config.hpp>
 
 #include "jubatus/util/text/json.h"
 #include "jubatus/util/lang/shared_ptr.h"
@@ -36,6 +39,13 @@
 #include "../common/network.hpp"
 #include "../common/system.hpp"
 #include "../common/signals.hpp"
+#include "../server/classifier_serv.hpp"
+
+#include "jubatus/core/fv_converter/datum_to_fv_converter.hpp"
+
+using jubatus::util::text::json::json;
+using jubatus::util::lang::lexical_cast;
+using jubatus::server::classifier_serv;
 
 namespace jubatus {
 namespace server {
@@ -223,7 +233,7 @@ server_argv::server_argv(int args, char** argv, const std::string& type)
   configpath = p.get<std::string>("configpath");
   modelpath = p.get<std::string>("model_file");
   daemon = p.exist("daemon");
-  validateConfig = p.exist("validate-config");
+  validate_config = p.exist("validate-config");
 
   // determine listen-address and IPaddr used as ZK 'node-name'
   // TODO(y-oda-oni-juba): check bind_address is valid format
@@ -324,8 +334,115 @@ server_argv::server_argv(int args, char** argv, const std::string& type)
   check_ignored_option(p, "interconnect_timeout");
 #endif
 
+  if (p.exist("validate-config")) {
+
+    std::string conf = get_conf(*this);
+    std::cout << "validate config:" << std::endl;
+    std::cout << conf << std::endl;
+    //TODO:
+    //try{
+//    core::common::jsonconfig::config conf_root(lexical_cast<json>("{}"));
+//    core::common::jsonconfig::config_cast_check<classifier_serv_config>(conf_root);
+
+    jubatus::util::text::json::json
+            js(new jubatus::util::text::json::json_object);
+    jubatus::core::fv_converter::converter_config config =
+            jubatus::util::text::json::json_cast<jubatus::core::fv_converter::converter_config>(js);
+
+    //FIXME:
+    jubatus::core::fv_converter::string_rule str_rule;
+    str_rule.key = "*";
+    str_rule.type = "str";
+    str_rule.sample_weight = "binzzz";
+    str_rule.global_weight = "bin";
+    jubatus::core::fv_converter::num_rule num_rule;
+    num_rule.key = "*";
+    num_rule.type = "num";
+
+    config.string_rules = std::vector<jubatus::core::fv_converter::string_rule>();
+    config.string_rules->push_back(str_rule);
+    config.num_rules = std::vector<jubatus::core::fv_converter::num_rule>();
+    config.num_rules->push_back(num_rule);
+
+    //FIXME:ここまで
+
+
+    jubatus::util::lang::shared_ptr<jubatus::core::fv_converter::datum_to_fv_converter> // NOLINT
+            converter(
+            new jubatus::core::fv_converter::datum_to_fv_converter);
+
+    jubatus::core::fv_converter::initialize_converter(config, *converter);
+
+    //catch(..){}
+
+    //
+    /*
+      } catch (const core::common::jsonconfig::cast_check_error& e) {
+      core::common::config_exception config_error;
+      const core::common::jsonconfig::config_error_list& errors = e.errors();
+      for (core::common::jsonconfig::config_error_list::const_iterator
+          it = errors.begin(), end = errors.end(); it != end; ++it) {
+        config_error << core::common::exception::error_message((*it)->what());
+      }
+      // send error message to caller
+      if (a.validateConfig) {
+        std::cout << "Invalid Config:" << std::endl;
+        std::cout << config_error.what() << std::endl;
+        exit(1);
+      }else {
+        throw JUBATUS_EXCEPTION(config_error);
+      }
+    } catch (const jubatus::util::lang::parse_error& e) {
+      std::cout << "Invalid Config:" << std::endl;
+      // exit immediately on JSON parse error with exit-code 1
+      std::string msg =
+          std::string("syntax error in configuration: ") +
+          (a.is_standalone() ?
+           a.configpath :
+           std::string("<zookeeper>")) + ":" +
+          jubatus::util::lang::lexical_cast<std::string>(e.lineno()) + ":" +
+          jubatus::util::lang::lexical_cast<std::string>(e.pos()) + " " +
+          e.msg();
+
+      LOG(ERROR) << msg;
+      exit(1);
+    } catch (const jubatus::core::fv_converter::converter_exception& e) {
+      std::cout << "Invalid Config:" << std::endl;
+      // send error message to caller
+      if (a.validateConfig) {
+        std::cout << e.what() << std::endl;
+        exit(1);
+      }else {
+        throw JUBATUS_EXCEPTION(e);
+      }
+    } catch (const std::runtime_error& e) {
+      throw;
+    } catch (const std::exception& e) {
+      throw;
+    }
+     */
+
+    std::cout << "Valid Config." << std::endl;
+
+    exit(0);
+  }
+
+
   boot_message(common::get_program_name());
 }
+// TODO:
+//    int read_config(const string& conf_file, converter_config& conf) {
+//      ifstream ifs(conf_file.c_str());
+//      if (!ifs) {
+//        cerr << "cannot open converter config file: " << conf_file << endl;
+//        return -1;
+//      }
+//      server_config config;
+//      ifs >> jubatus::util::text::json::via_json(config);
+//      conf = config.converter;
+//      return 0;
+//    }
+
 
 server_argv::server_argv()
     : port(9199),
